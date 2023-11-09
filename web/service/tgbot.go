@@ -2,6 +2,7 @@ package service
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -222,6 +223,14 @@ func (t *Tgbot) answerCommand(message *telego.Message, chatId int64, isAdmin boo
 		} else {
 			msg += t.I18nBot("tgbot.commands.usage")
 		}
+	case "we":
+		onlyMessage = true
+		if len(commandArgs) < 2 {
+			msg += t.I18nBot("tgbot.commands.we")
+			break
+		}
+		t.getWEData(chatId, commandArgs[0], commandArgs[1])
+		//msg += "test we connect"
 	case "inbound":
 		onlyMessage = true
 		if isAdmin && len(commandArgs) > 0 {
@@ -1055,6 +1064,86 @@ func (t *Tgbot) searchForClient(chatId int64, query string) {
 	output += t.I18nBot("tgbot.messages.refreshedOn", "Time=="+time.Now().Format("2006-01-02 15:04:05"))
 
 	t.SendMsgToTgbot(chatId, output)
+}
+
+func (t *Tgbot) getWEData(chatId int64, number string, password string) {
+	res, err := InitWE(number, password)
+	if err != nil {
+		logger.Warning(err)
+		msg := t.I18nBot("tgbot.wentWrong")
+		t.SendMsgToTgbot(chatId, msg)
+		return
+	}
+	/*if traffic == nil {
+		msg := t.I18nBot("tgbot.noResult")
+		t.SendMsgToTgbot(chatId, msg)
+		return
+	}*/
+
+	//body, err := io.ReadAll(res.Body)
+	if err != nil {
+		logger.Warning(err)
+		msg := t.I18nBot("tgbot.wentWrong")
+		t.SendMsgToTgbot(chatId, msg)
+		return
+	}
+	//sb := string(body)
+	b, _ := json.Marshal(res)
+	t.SendMsgToTgbot(chatId, string(b))
+	//return
+	/*
+	   now := time.Now().Unix()
+	   expiryTime := ""
+	   flag := false
+	   diff := traffic.ExpiryTime/1000 - now
+
+	   	if traffic.ExpiryTime == 0 {
+	   		expiryTime = t.I18nBot("tgbot.unlimited")
+	   	} else if diff > 172800 || !traffic.Enable {
+
+	   		expiryTime = time.Unix((traffic.ExpiryTime / 1000), 0).Format("2006-01-02 15:04:05")
+	   	} else if traffic.ExpiryTime < 0 {
+
+	   		expiryTime = fmt.Sprintf("%d %s", traffic.ExpiryTime/-86400000, t.I18nBot("tgbot.days"))
+	   		flag = true
+	   	} else {
+
+	   		expiryTime = fmt.Sprintf("%d %s", diff/3600, t.I18nBot("tgbot.hours"))
+	   		flag = true
+	   	}
+
+	   total := ""
+
+	   	if traffic.Total == 0 {
+	   		total = t.I18nBot("tgbot.unlimited")
+	   	} else {
+
+	   		total = common.FormatTraffic((traffic.Total))
+	   	}
+
+	   output := ""
+	   output += t.I18nBot("tgbot.messages.email", "Email=="+traffic.Email)
+
+	   	if traffic.Enable {
+	   		output += t.I18nBot("tgbot.messages.active")
+	   		if flag {
+	   			output += t.I18nBot("tgbot.messages.expireIn", "Time=="+expiryTime)
+	   		} else {
+	   			output += t.I18nBot("tgbot.messages.expire", "Time=="+expiryTime)
+	   		}
+	   	} else {
+
+	   		output += t.I18nBot("tgbot.messages.inactive")
+	   		output += t.I18nBot("tgbot.messages.expire", "Time=="+expiryTime)
+	   	}
+
+	   output += t.I18nBot("tgbot.messages.upload", "Upload=="+common.FormatTraffic(traffic.Up))
+	   output += t.I18nBot("tgbot.messages.download", "Download=="+common.FormatTraffic(traffic.Down))
+	   output += t.I18nBot("tgbot.messages.total", "UpDown=="+common.FormatTraffic((traffic.Up+traffic.Down)), "Total=="+total)
+	   output += t.I18nBot("tgbot.messages.refreshedOn", "Time=="+time.Now().Format("2006-01-02 15:04:05"))
+
+	   t.SendMsgToTgbot(chatId, output)
+	*/
 }
 
 func (t *Tgbot) getExhausted() string {
