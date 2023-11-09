@@ -2,7 +2,6 @@ package service
 
 import (
 	"embed"
-	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -1088,8 +1087,9 @@ func (t *Tgbot) getWEData(chatId int64, number string, password string) {
 		return
 	}
 	//sb := string(body)
-	b, _ := json.Marshal(res)
-	t.SendMsgToTgbot(chatId, string(b))
+	//b, _ := json.Marshal()
+	output := fmt.Sprintf("customerName: %s\nCustomerID: %s\nNumber: %s\nJWT: %s", res.CustomerName(), res.CustomerID(), res.Msisdn(), res.JWT())
+	t.SendMsgToTgbot(chatId, output)
 	//return
 	/*
 	   now := time.Now().Unix()

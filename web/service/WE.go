@@ -34,9 +34,27 @@ import (
 }*/
 
 type UserInfo struct {
-	msisdn     string
-	customerId string
-	jwt        string
+	data map[string]interface{}
+}
+
+func NewUserInfo(data map[string]interface{}) *UserInfo {
+	return &UserInfo{data: data}
+}
+
+func (u *UserInfo) Msisdn() string {
+	return u.data["header"].(map[string]interface{})["msisdn"].(string)
+}
+
+func (u *UserInfo) CustomerID() string {
+	return u.data["header"].(map[string]interface{})["customerId"].(string)
+}
+
+func (u *UserInfo) JWT() string {
+	return u.data["body"].(map[string]interface{})["jwt"].(string)
+}
+
+func (u *UserInfo) CustomerName() string {
+	return u.data["body"].(map[string]interface{})["customerName"].(string)
 }
 
 type RequestHeader struct {
@@ -59,14 +77,14 @@ var httpClient = &http.Client{
 	Timeout: time.Second * 10,
 }
 
-func InitWE(number string, password string) (map[string]interface{}, error) {
+func InitWE(number string, password string) (*UserInfo, error) {
 	userInfo := UserInfo{}
 	login, err := userInfo.Login(number, password)
 	return login, err
 
 }
 
-func (u UserInfo) Login(number string, password string) (map[string]interface{}, error) {
+func (u UserInfo) Login(number string, password string) (*UserInfo, error) {
 	requestHeader := RequestHeader{
 		Msisdn:            number,
 		NumberServiceType: "FBB",
@@ -117,7 +135,8 @@ func (u UserInfo) Login(number string, password string) (map[string]interface{},
 		return nil, err
 	}
 	fmt.Printf("Login Response: %v\n", loginJson)
-	return loginJson, nil
+	userInfo := NewUserInfo(loginJson)
+	return userInfo, nil
 }
 
 func generateToken() (string, error) {
