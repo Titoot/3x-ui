@@ -404,6 +404,7 @@
 "welcome" = "🤖 Welcome to <b>{{ .Hostname }}</b> management bot.\r\n"
 "status" = "✅ Bot is ok!"
 "usage" = "❗ Please provide a text to search!"
+"we" = "❗ Please provide your landline number and password!"
 "getID" = "🆔 Your ID: <code>{{ .ID }}</code>"
 "helpAdminCommands" = "Search for a client email:\r\n<code>/usage [Email]</code>\r\n \r\nSearch for inbounds (with client stats):\r\n<code>/inbound [Remark]</code>"
 "helpClientCommands" = "To search for statistics, just use folowing command:\r\n \r\n<code>/usage [UUID|Password]</code>\r\n \r\nUse UUID for vmess/vless and Password for Trojan."
