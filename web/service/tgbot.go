@@ -1066,7 +1066,7 @@ func (t *Tgbot) searchForClient(chatId int64, query string) {
 }
 
 func (t *Tgbot) getWEData(chatId int64, number string, password string) {
-	res, err := InitWE(number, password)
+	res, quota, err := InitWE(number, password)
 	if err != nil {
 		logger.Warning(err)
 		msg := t.I18nBot("tgbot.wentWrong")
@@ -1088,8 +1088,9 @@ func (t *Tgbot) getWEData(chatId int64, number string, password string) {
 	}
 	//sb := string(body)
 	//b, _ := json.Marshal()
-	output := fmt.Sprintf("customerName: %s\nCustomerID: %s\nNumber: %s\nJWT: %s", res.CustomerName(), res.CustomerID(), res.Msisdn(), res.JWT())
+	output := fmt.Sprintf("customerName: %s\nCustomerID: %s\nNumber: %s", res.CustomerName(), res.CustomerID(), res.Msisdn())
 	t.SendMsgToTgbot(chatId, output)
+	t.SendMsgToTgbot(chatId, quota)
 	//return
 	/*
 	   now := time.Now().Unix()

@@ -58,6 +58,7 @@ func (u *UserInfo) CustomerName() string {
 }
 
 type RequestHeader struct {
+	customerId        string `json:"customerId"`
 	Msisdn            string `json:"msisdn"`
 	NumberServiceType string `json:"numberServiceType"`
 	Timestamp         string `json:"timestamp"`
@@ -77,14 +78,20 @@ var httpClient = &http.Client{
 	Timeout: time.Second * 10,
 }
 
-func InitWE(number string, password string) (*UserInfo, error) {
-	userInfo := UserInfo{}
-	login, err := userInfo.Login(number, password)
-	return login, err
+func InitWE(number string, password string) (*UserInfo, string, error) {
+	userInfo := &UserInfo{}
+	userInfo, err := userInfo.Login(number, password)
+	fmt.Println(userInfo)
+	fmt.Println(userInfo.CustomerID())
+
+	//quota, err := userInfo.getQuota()
+	quota := userInfo.FullQuotaInfo()
+	fmt.Println(quota)
+	return userInfo, quota, err
 
 }
 
-func (u UserInfo) Login(number string, password string) (*UserInfo, error) {
+func (u *UserInfo) Login(number string, password string) (*UserInfo, error) {
 	requestHeader := RequestHeader{
 		Msisdn:            number,
 		NumberServiceType: "FBB",
@@ -135,8 +142,48 @@ func (u UserInfo) Login(number string, password string) (*UserInfo, error) {
 		return nil, err
 	}
 	fmt.Printf("Login Response: %v\n", loginJson)
-	userInfo := NewUserInfo(loginJson)
-	return userInfo, nil
+	u = &UserInfo{data: loginJson}
+	return u, nil
+}
+
+func (u *UserInfo) FullQuotaInfo() string {
+	QuotaData, err := u.getQuota()
+	if err != nil {
+		fmt.Println("Error getting data from getQuota:", err)
+		return ""
+	}
+	values := []string{"freeUnitEnName", "initialTotalAmount", "freeAmount", "subscriptionDate", "renewalDate", "usagePercentage", "remainingDaysForRenewal", "usedAmount"}
+	info := []map[string]interface{}{}
+
+	for _, j := range QuotaData["body"].(map[string]interface{})["detailedLineUsageList"].([]interface{}) {
+		jsonObj := make(map[string]interface{})
+		for _, i := range values {
+			data := j.(map[string]interface{})[i]
+			jsonObj[i] = data
+		}
+		jsonObj["Ratio"] = getRatio(j.(map[string]interface{}))
+		info = append(info, jsonObj)
+	}
+
+	jsonBytes, err := json.MarshalIndent(info, "", "    ")
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		return ""
+	}
+
+	return string(jsonBytes)
+}
+
+func getRatio(QuotaData map[string]interface{}) string {
+	remainingDays, ok1 := QuotaData["remainingDaysForRenewal"].(float64)
+	remainingAmount, ok2 := QuotaData["freeAmount"].(float64)
+
+	if !ok1 || !ok2 || remainingDays == 0 {
+		return "Error: Invalid data for ratio calculation"
+	}
+
+	ratio := remainingAmount / remainingDays
+	return fmt.Sprintf("%.2f", ratio)
 }
 
 func generateToken() (string, error) {
@@ -160,6 +207,50 @@ func generateToken() (string, error) {
 	}
 	fmt.Printf("JWT TOKEN: %s", jwt)
 	return jwt, nil
+}
+
+func (u *UserInfo) getQuota() (map[string]interface{}, error) {
+	requestHeader := RequestHeader{
+		customerId:        u.CustomerID(),
+		Msisdn:            u.Msisdn(),
+		NumberServiceType: "FBB",
+		Locale:            "en",
+	}
+
+	jsonData := JsonRequest{
+		Header: requestHeader,
+	}
+
+	jsonBytes, err := json.Marshal(jsonData)
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		return nil, err
+	}
+
+	request, err := http.NewRequest("POST", "https://api-my.te.eg/api/line/freeunitusage", bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		fmt.Println("Error making HTTP request:", err)
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	request.Header.Set("Jwt", u.JWT())
+
+	resp, err := httpClient.Do(request)
+	if err != nil {
+		fmt.Println("Error making HTTP request:", err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var quotaJson map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&quotaJson)
+	if err != nil {
+		fmt.Println("Error decoding JSON response:", err)
+		return nil, err
+	}
+	fmt.Printf("Quota Response: %v\n", quotaJson)
+
+	return quotaJson, nil
 }
 
 func pad(s string) string {
