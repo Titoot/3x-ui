@@ -14,3 +14,4 @@ release/
 /release.sh
 /x-ui
 build
+db/x-ui.db

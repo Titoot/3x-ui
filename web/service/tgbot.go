@@ -222,14 +222,23 @@ func (t *Tgbot) answerCommand(message *telego.Message, chatId int64, isAdmin boo
 		} else {
 			msg += t.I18nBot("tgbot.commands.usage")
 		}
-	case "we":
+	case "usage_add":
 		onlyMessage = true
-		if len(commandArgs) < 2 {
-			msg += t.I18nBot("tgbot.commands.we")
+		if len(commandArgs) < 1 {
+			msg += "please add config uuid"
 			break
 		}
-		t.getWEData(chatId, commandArgs[0], commandArgs[1])
-		//msg += "test we connect"
+
+		t.addUUID(chatId, commandArgs[0], message.From.ID)
+
+	// case "we":
+	// 	onlyMessage = true
+	// 	if len(commandArgs) < 2 {
+	// 		msg += t.I18nBot("tgbot.commands.we")
+	// 		break
+	// 	}
+	// 	t.getWEData(chatId, commandArgs[0], commandArgs[1])
+	// 	//msg += "test we connect"
 	case "inbound":
 		onlyMessage = true
 		if isAdmin && len(commandArgs) > 0 {
@@ -1378,6 +1387,25 @@ func (t *Tgbot) getWEData(chatId int64, number string, password string) {
 
 	   t.SendMsgToTgbot(chatId, output)
 	*/
+}
+
+func (t *Tgbot) addUUID(chatId int64, uuid string, tgId int64) {
+	traffic, _, err := t.inboundService.GetClientInboundByEmail(uuid)
+	if err != nil {
+		logger.Warning(err)
+		msg := t.I18nBot("tgbot.wentWrong")
+		t.SendMsgToTgbot(chatId, msg)
+		return
+	}
+
+	err = t.inboundService.SetClientTelegramUserID(traffic.Id, strconv.FormatInt(tgId, 10))
+	if err != nil {
+		logger.Warning(err)
+		t.SendMsgToTgbot(chatId, "Was not Able to Add Telegram ID")
+		return
+	}
+
+	t.SendMsgToTgbot(chatId, "Telegram Id was Set Successfully")
 }
 
 func (t *Tgbot) getExhausted() string {

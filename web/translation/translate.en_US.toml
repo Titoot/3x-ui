@@ -407,7 +407,7 @@
 "we" = "❗ Please provide your landline number and password!"
 "getID" = "🆔 Your ID: <code>{{ .ID }}</code>"
 "helpAdminCommands" = "Search for a client email:\r\n<code>/usage [Email]</code>\r\n \r\nSearch for inbounds (with client stats):\r\n<code>/inbound [Remark]</code>"
-"helpClientCommands" = "To search for statistics, just use folowing command:\r\n \r\n<code>/usage [UUID|Password]</code>\r\n \r\nUse UUID for vmess/vless and Password for Trojan."
+"helpClientCommands" = "To search for statistics, just use folowing command:\r\n \r\n<code>/usage [UUID|Password]</code>\r\n Use UUID for vmess/vless and Password for Trojan.\r\n \r\n<code>/usage_add [UUID|Password]</code>\r\nAdd vmess/vless UUID to your account"
 
 [tgbot.messages]
 "cpuThreshold" = "🔴 The CPU usage {{ .Percent }}% is more than threshold {{ .Threshold }}%"
