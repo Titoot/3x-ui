@@ -9,7 +9,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"slices"
 	"time"
 	"x-ui/config"
 	"x-ui/database"
@@ -1468,7 +1467,7 @@ func (t *Tgbot) getWEData(chatId int64, number string, password string) {
 
 func (t *Tgbot) addUUID(chatId int64, uuid string, tgId int64) {
 	traffic, _, err := t.inboundService.GetClientInboundByEmail(uuid)
-	if err != nil {
+	if err != nil || traffic == nil {
 		logger.Warning(err)
 		msg := t.I18nBot("tgbot.wentWrong")
 		t.SendMsgToTgbot(chatId, msg)
@@ -1561,26 +1560,27 @@ func (t *Tgbot) getExhausted(chatId int64) {
 	if len(exhaustedClients) > 0 {
 		output += t.I18nBot("tgbot.messages.exhaustedMsg", "Type=="+t.I18nBot("tgbot.clients"))
 
-	if exhaustedCC > 0 {
-		output += t.I18nBot("tgbot.messages.depleteSoon", "Deplete=="+t.I18nBot("tgbot.clients"))
-		var buttons []telego.InlineKeyboardButton
-		for _, traffic := range exhaustedClients {
-			output += t.clientInfoMsg(&traffic, true, false, false, true, true, false)
-			output += "\r\n"
-			buttons = append(buttons, tu.InlineKeyboardButton(traffic.Email).WithCallbackData(t.encodeQuery("client_get_usage "+traffic.Email)))
-		}
-		cols := 0
-		if exhaustedCC < 11 {
-			cols = 1
+		if exhaustedCC > 0 {
+			output += t.I18nBot("tgbot.messages.depleteSoon", "Deplete=="+t.I18nBot("tgbot.clients"))
+			var buttons []telego.InlineKeyboardButton
+			for _, traffic := range exhaustedClients {
+				output += t.clientInfoMsg(&traffic, true, false, false, true, true, false)
+				output += "\r\n"
+				buttons = append(buttons, tu.InlineKeyboardButton(traffic.Email).WithCallbackData(t.encodeQuery("client_get_usage "+traffic.Email)))
+			}
+			cols := 0
+			if exhaustedCC < 11 {
+				cols = 1
+			} else {
+				cols = 2
+			}
+			output += t.I18nBot("tgbot.messages.refreshedOn", "Time=="+time.Now().Format("2006-01-02 15:04:05"))
+			keyboard := tu.InlineKeyboardGrid(tu.InlineKeyboardCols(cols, buttons...))
+			t.SendMsgToTgbot(chatId, output, keyboard)
 		} else {
-			cols = 2
+			output += t.I18nBot("tgbot.messages.refreshedOn", "Time=="+time.Now().Format("2006-01-02 15:04:05"))
+			t.SendMsgToTgbot(chatId, output)
 		}
-		output += t.I18nBot("tgbot.messages.refreshedOn", "Time=="+time.Now().Format("2006-01-02 15:04:05"))
-		keyboard := tu.InlineKeyboardGrid(tu.InlineKeyboardCols(cols, buttons...))
-		t.SendMsgToTgbot(chatId, output, keyboard)
-	} else {
-		output += t.I18nBot("tgbot.messages.refreshedOn", "Time=="+time.Now().Format("2006-01-02 15:04:05"))
-		t.SendMsgToTgbot(chatId, output)
 	}
 }
 
