@@ -25,6 +25,7 @@ import (
 
 	sessions "github.com/Calidity/gin-sessions"
 	"github.com/Calidity/gin-sessions/cookie"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
 )
@@ -174,6 +175,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	if err != nil {
 		return nil, err
 	}
+	engine.Use(gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{basePath + "panel/API/"})))
 	assetsBasePath := basePath + "assets/"
 
 	store := cookie.NewStore(secret)
@@ -238,11 +240,11 @@ func (s *Server) startTask() {
 	if err != nil {
 		logger.Warning("start xray failed:", err)
 	}
-	// Check whether xray is running every 30 seconds
-	s.cron.AddJob("@every 30s", job.NewCheckXrayRunningJob())
+	// Check whether xray is running every second
+	s.cron.AddJob("@every 1s", job.NewCheckXrayRunningJob())
 
-	// Check if xray needs to be restarted
-	s.cron.AddFunc("@every 10s", func() {
+	// Check if xray needs to be restarted every 30 seconds
+	s.cron.AddFunc("@every 30s", func() {
 		if s.xrayService.IsNeedRestartAndSetFalse() {
 			err := s.xrayService.RestartXray(false)
 			if err != nil {
